@@ -4,6 +4,8 @@
  * Writes the variables and their computed norm to an ADIOS2 file.
  *
  * Kshitij Mehta
+ *
+ * @TODO: Error checks. What is vector resizing returns an out-of-memory error? Must handle it.
  */
 #include <iostream>
 #include <stdexcept>
@@ -11,6 +13,9 @@
 #include <cmath>
 #include "adios2.h"
 
+/*
+ * Function to compute the norm of an array
+ */
 std::vector<double> compute_norm (std::vector<double> real_part, std::vector<double> imag_part, int dims) {
     int i;
     std::vector<double> norm;
@@ -100,6 +105,10 @@ int main(int argc, char *argv[])
                     {shape_u_real[0]/comm_size*rank,0,0},{shape_u_real[0], shape_u_real[1], shape_u_real[2]}));
         var_u_imag.SetSelection(adios2::Box<adios2::Dims>(
                     {shape_u_imag[0]/comm_size*rank,0,0},{shape_u_imag[0], shape_u_imag[1], shape_u_imag[2]}));
+        var_v_real.SetSelection(adios2::Box<adios2::Dims>(
+                    {shape_v_real[0]/comm_size*rank,0,0},{shape_v_real[0], shape_v_real[1], shape_v_real[2]}));
+        var_v_imag.SetSelection(adios2::Box<adios2::Dims>(
+                    {shape_v_imag[0]/comm_size*rank,0,0},{shape_v_imag[0], shape_v_imag[1], shape_v_imag[2]}));
 
         // Allocate vectors to hold U and V data and their norms
         u_real_data.resize(u_local_size);
@@ -131,6 +140,7 @@ int main(int argc, char *argv[])
     }
 
     // cleanup
+    std::cout << "cleaning up" << std::endl;
     ad_engine.Close();
     MPI_Finalize();
     return 0;
