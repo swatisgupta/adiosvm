@@ -76,41 +76,43 @@ int main(int argc, char *argv[])
         if (status != adios2::StepStatus::OK)
             break;
 
-        // Inquire variable
-        var_u_real = ad_io.InquireVariable<double>("u_real");
-        var_u_imag = ad_io.InquireVariable<double>("u_imag");
-        var_v_real = ad_io.InquireVariable<double>("v_real");
-        var_v_imag = ad_io.InquireVariable<double>("v_imag");
+        if (firstStep) {
+            // Inquire variable and set the selection at the first step only
+            // This assumes that the variable dimensions do not change across timesteps
 
-        if (!var_u_real) {
-            std::cout << "ERROR: u_real not found. Exiting.." << std::endl;
-            break;
+            // Inquire variable
+            var_u_real = ad_io.InquireVariable<double>("u_real");
+            var_u_imag = ad_io.InquireVariable<double>("u_imag");
+            var_v_real = ad_io.InquireVariable<double>("v_real");
+            var_v_imag = ad_io.InquireVariable<double>("v_imag");
+
+            shape_u_real = var_u_real.Shape();
+            shape_u_imag = var_u_imag.Shape();
+            shape_v_real = var_v_real.Shape();
+            shape_v_imag = var_v_imag.Shape();
+
+            // Calculate global and local sizes of U and V
+            u_global_size = shape_u_real[0] * shape_u_real[1] * shape_u_real[2];
+            u_local_size  = u_global_size/comm_size;
+            v_global_size = shape_v_real[0] * shape_v_real[1] * shape_v_real[2];
+            v_local_size  = v_global_size/comm_size;
+            
+            // Set selection
+            var_u_real.SetSelection(adios2::Box<adios2::Dims>(
+                        {shape_u_real[0]/comm_size*rank,0,0},
+                        {shape_u_real[0]/comm_size, shape_u_real[1], shape_u_real[2]}));
+            var_u_imag.SetSelection(adios2::Box<adios2::Dims>(
+                        {shape_u_imag[0]/comm_size*rank,0,0},
+                        {shape_u_imag[0]/comm_size, shape_u_imag[1], shape_u_imag[2]}));
+            var_v_real.SetSelection(adios2::Box<adios2::Dims>(
+                        {shape_v_real[0]/comm_size*rank,0,0},
+                        {shape_v_real[0]/comm_size, shape_v_real[1], shape_v_real[2]}));
+            var_v_imag.SetSelection(adios2::Box<adios2::Dims>(
+                        {shape_v_imag[0]/comm_size*rank,0,0},
+                        {shape_v_imag[0]/comm_size, shape_v_imag[1], shape_v_imag[2]}));
+
+            firstStep = false;
         }
-
-        shape_u_real = var_u_real.Shape();
-        shape_u_imag = var_u_imag.Shape();
-        shape_v_real = var_v_real.Shape();
-        shape_v_imag = var_v_imag.Shape();
-
-        // Calculate global and local sizes of U and V
-        u_global_size = shape_u_real[0] * shape_u_real[1] * shape_u_real[2];
-        u_local_size  = u_global_size/comm_size;
-        v_global_size = shape_v_real[0] * shape_v_real[1] * shape_v_real[2];
-        v_local_size  = v_global_size/comm_size;
-        
-        // Set selection
-        var_u_real.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_u_real[0]/comm_size*rank,0,0},
-                    {shape_u_real[0]/comm_size, shape_u_real[1], shape_u_real[2]}));
-        var_u_imag.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_u_imag[0]/comm_size*rank,0,0},
-                    {shape_u_imag[0]/comm_size, shape_u_imag[1], shape_u_imag[2]}));
-        var_v_real.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_v_real[0]/comm_size*rank,0,0},
-                    {shape_v_real[0]/comm_size, shape_v_real[1], shape_v_real[2]}));
-        var_v_imag.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_v_imag[0]/comm_size*rank,0,0},
-                    {shape_v_imag[0]/comm_size, shape_v_imag[1], shape_v_imag[2]}));
 
         // Read adios2 data
         ad_engine.Get<double>(var_u_real, u_real_data);
