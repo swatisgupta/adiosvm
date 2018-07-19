@@ -5,7 +5,9 @@
  *
  * Kshitij Mehta
  *
- * @TODO: Error checks. What is vector resizing returns an out-of-memory error? Must handle it.
+ * @TODO:
+ *      - Error checks. What is vector resizing returns an out-of-memory error? Must handle it
+ *      - Turn ADIOS2 Debug to ON
  */
 #include <iostream>
 #include <stdexcept>
@@ -95,38 +97,33 @@ int main(int argc, char *argv[])
         u_local_size  = u_global_size/comm_size;
         v_global_size = shape_v_real[0] * shape_v_real[1] * shape_v_real[2];
         v_local_size  = v_global_size/comm_size;
-
-        //std::cout << "u_real shape: " << std::endl;
-        //for (int i=0; i<shape_u.size(); i++)
-        //    std::cout << shape_u[i] << std::endl;
         
         // Set selection
         var_u_real.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_u_real[0]/comm_size*rank,0,0},{shape_u_real[0], shape_u_real[1], shape_u_real[2]}));
+                    {shape_u_real[0]/comm_size*rank,0,0},
+                    {shape_u_real[0]/comm_size, shape_u_real[1], shape_u_real[2]}));
         var_u_imag.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_u_imag[0]/comm_size*rank,0,0},{shape_u_imag[0], shape_u_imag[1], shape_u_imag[2]}));
+                    {shape_u_imag[0]/comm_size*rank,0,0},
+                    {shape_u_imag[0]/comm_size, shape_u_imag[1], shape_u_imag[2]}));
         var_v_real.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_v_real[0]/comm_size*rank,0,0},{shape_v_real[0], shape_v_real[1], shape_v_real[2]}));
+                    {shape_v_real[0]/comm_size*rank,0,0},
+                    {shape_v_real[0]/comm_size, shape_v_real[1], shape_v_real[2]}));
         var_v_imag.SetSelection(adios2::Box<adios2::Dims>(
-                    {shape_v_imag[0]/comm_size*rank,0,0},{shape_v_imag[0], shape_v_imag[1], shape_v_imag[2]}));
+                    {shape_v_imag[0]/comm_size*rank,0,0},
+                    {shape_v_imag[0]/comm_size, shape_v_imag[1], shape_v_imag[2]}));
 
-        // Allocate vectors to hold U and V data and their norms
-        u_real_data.resize(u_local_size);
-        u_imag_data.resize(u_local_size);
-        v_real_data.resize(v_local_size);
-        v_imag_data.resize(v_local_size);
-        
         // Read adios2 data
-        ad_engine.Get<double>(var_u_real, u_real_data.data(), adios2::Mode::Deferred);
-        ad_engine.Get<double>(var_u_imag, u_imag_data.data(), adios2::Mode::Deferred);
-        ad_engine.Get<double>(var_v_real, v_real_data.data(), adios2::Mode::Deferred);
-        ad_engine.Get<double>(var_v_imag, v_imag_data.data(), adios2::Mode::Deferred);
-        ad_engine.PerformGets();
+        ad_engine.Get<double>(var_u_real, u_real_data);
+        ad_engine.Get<double>(var_u_imag, u_imag_data);
+        ad_engine.Get<double>(var_v_real, v_real_data);
+        ad_engine.Get<double>(var_v_imag, v_imag_data);
 
         // End adios2 step
         ad_engine.EndStep();
 
         std::cout << u_real_data[0] << std::endl;
+        std::cout << "size" << std::endl;
+        std::cout << u_real_data.size() << std::endl;
 
         // Compute norms
         norm_u = compute_norm(u_real_data, u_imag_data, u_local_size);
