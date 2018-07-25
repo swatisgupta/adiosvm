@@ -6,6 +6,21 @@
         ==========================================-->
 
     <io name="SimulationOutput">
+            <engine type="BPFile">
+            </engine>
+<!--
+            <engine type="DataMan">
+                <parameter key="Blocking" value="no"/>
+
+            <transport type="WAN">
+                <parameter key="Library" value="ZMQ"/>
+                <parameter key="IPAddress" value="127.0.0.1"/>
+            </transport>
+        </engine>
+-->
+    </io>
+
+    <io name="SimulationOutput2">
         <engine type="BPFile">
         </engine>
     </io>
