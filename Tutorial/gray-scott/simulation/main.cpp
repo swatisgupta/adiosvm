@@ -70,11 +70,18 @@ int main(int argc, char **argv)
     adios2::ADIOS adios(settings.adios_config, comm, adios2::DebugON);
     adios2::IO io_main = adios.DeclareIO("SimulationOutput");
     adios2::IO io_ckpt = adios.DeclareIO("SimulationCheckpoint");
-
+    adios2::IO io_stat = adios.DeclareIO("StatisticOutput");
+    
+    
     Writer writer_main(settings, sim, io_main);
     Writer writer_ckpt(settings, sim, io_ckpt);
+    Writer writer_stat(io_stat);
+
+    std::string stat_fname = "stat.bp";
 
     writer_main.open(settings.output);
+
+    writer_stat.open(stat_fname);
 
     if (rank == 0) {
         print_io_settings(io_main);
@@ -137,9 +144,17 @@ int main(int argc, char **argv)
         log << i << "\t" << time_step << "\t" << time_compute << "\t"
             << time_write << std::endl;
 #endif
+       writer_stat.write(i);
+       std::ifstream ifs("kill_run");
+       if (ifs) {
+           writer_main.close();
+           writer_stat.close();
+           MPI_Finalize();
+       }
     }
 
     writer_main.close();
+    writer_stat.close();
 
 #ifdef ENABLE_TIMERS
     log << "total\t" << timer_total.elapsed() << "\t" << timer_compute.elapsed()

@@ -38,6 +38,12 @@ void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
     // TODO extend to other formats e.g. structured
 }
 
+Writer::Writer(adios2::IO io)
+    : io(io)
+{
+    var_step = io.DefineVariable<int>("step");
+}
+
 Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
     : settings(settings), io(io)
 {
@@ -75,6 +81,14 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
 void Writer::open(const std::string &fname)
 {
     writer = io.Open(fname, adios2::Mode::Write);
+}
+
+void Writer::write(int step)
+{
+        writer.BeginStep();
+        writer.Put<int>(var_step, &step);
+        writer.EndStep();
+    
 }
 
 void Writer::write(int step, const GrayScott &sim)
